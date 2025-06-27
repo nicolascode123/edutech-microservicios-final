@@ -1,5 +1,4 @@
-package com.edutech.msusuarios;
-
+package com.edutech.msusuarios.integration;
 import com.edutech.msusuarios.entity.Usuario;
 import com.edutech.msusuarios.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;

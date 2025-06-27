@@ -1,5 +1,4 @@
-package com.edutech.msusuarios;
-
+package com.edutech.msusuarios.unit;
 import com.edutech.msusuarios.controller.UsuarioController;
 import com.edutech.msusuarios.entity.Usuario;
 import com.edutech.msusuarios.repository.UsuarioRepository;
