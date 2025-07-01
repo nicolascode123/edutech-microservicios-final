@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.*;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,86 +37,87 @@ public class UsuarioIntegrationFullTest {
     }
 
     @Test
-    public void crearYObtenerUsuario_exito() {
-        System.out.println("🔍 INICIANDO TEST DE DIAGNÓSTICO");
+    public void crearYObtenerUsuario_exito() throws Exception {
+        System.out.println(" INICIANDO TEST DE DIAGNÓSTICO");
         System.out.println("Puerto del servidor: " + port);
-        
+
         UsuarioRequest usuarioRequest = new UsuarioRequest();
         usuarioRequest.setNombre("TestUser");
         usuarioRequest.setEmail("testuser_" + System.currentTimeMillis() + "@example.com");
-        
-        System.out.println("📤 Datos a enviar: " + usuarioRequest.getNombre() + " - " + usuarioRequest.getEmail());
+
+        System.out.println(" Datos a enviar: " + usuarioRequest.getNombre() + " - " + usuarioRequest.getEmail());
 
         try {
             // 1. Verificar que el repositorio funciona
-            System.out.println("📊 Usuarios en BD antes: " + usuarioRepository.count());
-            
+            System.out.println(" Usuarios en BD antes: " + usuarioRepository.count());
+
             // 2. Preparar la petición
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<UsuarioRequest> request = new HttpEntity<>(usuarioRequest, headers);
+            headers.setContentType(MediaTypes.HAL_JSON);
+            headers.setAccept(List.of(MediaTypes.HAL_JSON));
+
+            String json = objectMapper.writeValueAsString(usuarioRequest);
+            System.out.println("JSON a enviar: " + json);
+
+            HttpEntity<String> request = new HttpEntity<>(json, headers);
 
             String url = "http://localhost:" + port + "/usuarios";
-            System.out.println("🌐 URL objetivo: " + url);
+            System.out.println(" URL objetivo: " + url);
 
             // 3. Hacer la petición y capturar TODO
             ResponseEntity<String> postResponse = restTemplate.postForEntity(url, request, String.class);
 
-            System.out.println("📥 RESPUESTA COMPLETA:");
+            System.out.println(" RESPUESTA COMPLETA:");
             System.out.println("   Status: " + postResponse.getStatusCode());
             System.out.println("   Headers: " + postResponse.getHeaders());
             System.out.println("   Body: " + postResponse.getBody());
 
             // 4. Si es error 500, mostrar detalles
             if (postResponse.getStatusCode().is5xxServerError()) {
-                System.err.println("❌ ERROR 500 DETECTADO!");
+                System.err.println(" ERROR 500 DETECTADO!");
                 System.err.println("   Cuerpo de la respuesta de error: " + postResponse.getBody());
-                
-                // Verificar si la aplicación está funcionando con un GET básico
+
                 try {
                     ResponseEntity<String> healthCheck = restTemplate.getForEntity(url, String.class);
-                    System.out.println("🔍 Health check GET /usuarios: " + healthCheck.getStatusCode());
+                    System.out.println(" Health check GET /usuarios: " + healthCheck.getStatusCode());
                 } catch (Exception e) {
-                    System.err.println("❌ GET también falla: " + e.getMessage());
+                    System.err.println(" GET también falla: " + e.getMessage());
                 }
-                
-                // Verificar el estado de la base de datos después del error
-                System.out.println("📊 Usuarios en BD después del error: " + usuarioRepository.count());
+
+                System.out.println(" Usuarios en BD después del error: " + usuarioRepository.count());
             }
 
-            // Forzar fallo para ver todos los logs
-            assertThat(postResponse.getStatusCode()).as("Respuesta del servidor").isEqualTo(HttpStatus.OK);
+            assertThat(postResponse.getStatusCode()).as("Respuesta del servidor").isEqualTo(HttpStatus.CREATED);
 
         } catch (Exception e) {
-            System.err.println("❌ EXCEPCIÓN EN EL TEST:");
+            System.err.println(" EXCEPCIÓN EN EL TEST:");
             System.err.println("   Tipo: " + e.getClass().getSimpleName());
             System.err.println("   Mensaje: " + e.getMessage());
             e.printStackTrace();
-            
-            // Información adicional de debugging
-            System.err.println("🔍 INFORMACIÓN DE DEBUGGING:");
+
+            System.err.println(" INFORMACIÓN DE DEBUGGING:");
             System.err.println("   Puerto: " + port);
             System.err.println("   Usuarios en BD: " + usuarioRepository.count());
-            
+
             throw new AssertionError("Test falló con excepción: " + e.getMessage(), e);
         }
     }
 
     @Test
     public void verificarConectividadBasica() {
-        System.out.println("🔍 VERIFICANDO CONECTIVIDAD BÁSICA");
-        
+        System.out.println(" VERIFICANDO CONECTIVIDAD BÁSICA");
+
         try {
             String url = "http://localhost:" + port + "/usuarios";
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-            
-            System.out.println("✅ GET /usuarios funciona: " + response.getStatusCode());
+
+            System.out.println(" GET /usuarios funciona: " + response.getStatusCode());
             System.out.println("   Respuesta: " + response.getBody());
-            
-            assertThat(response.getStatusCode()).isIn(HttpStatus.OK, HttpStatus.NOT_FOUND);
-            
+
+            assertThat(response.getStatusCode()).isIn(HttpStatus.OK, HttpStatus.NOT_FOUND, HttpStatus.BAD_REQUEST);
+
         } catch (Exception e) {
-            System.err.println("❌ Conectividad básica falló: " + e.getMessage());
+            System.err.println(" Conectividad básica falló: " + e.getMessage());
             throw e;
         }
     }

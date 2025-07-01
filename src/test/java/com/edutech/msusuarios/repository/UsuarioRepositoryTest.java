@@ -1,7 +1,7 @@
-package com.edutech.msusuarios.unit;
+package com.edutech.msusuarios.repository;
 import com.edutech.msusuarios.entity.Usuario;
 import com.edutech.msusuarios.repository.UsuarioRepository;
-import com.edutech.msusuarios.unit.UsuarioRepositoryTest;
+import com.edutech.msusuarios.repository.UsuarioRepositoryTest;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
